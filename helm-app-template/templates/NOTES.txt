@@ -1,0 +1,31 @@
+1. Get the application URL by running these commands:
+{{- $serviceType := .Values.service.type | default "ClusterIP" }}
+{{- if and .Values.httproute .Values.httproute.enabled }}
+  The application is exposed via Gateway API (HTTPRoute).
+{{- range .Values.httproute.hostnames }}
+  curl http://{{ . }}
+{{- end }}
+{{- else if eq $serviceType "NodePort" }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} \
+    -o jsonpath="{.spec.ports[0].nodePort}" \
+    services {{ include "base.fullname" . }})
+  export NODE_IP=$(kubectl get nodes \
+    -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if eq $serviceType "LoadBalancer" }}
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+  kubectl get svc --namespace {{ .Release.Namespace }} \
+    {{ include "base.fullname" . }} -w
+{{- else }}
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} \
+    -l "app.kubernetes.io/name={{ include "base.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" \
+    -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT={{ .Values.service.containerPort | default 80 }}
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace {{ .Release.Namespace }} \
+    port-forward $POD_NAME 8080:$CONTAINER_PORT
+{{- end }}{{- if and .Values.pvc.enabled (has "ReadWriteOnce" .Values.pvc.accessModes) (or .Values.autoscaling.enabled (gt (int .Values.replicaCount) 1)) }}
+
+WARNING: PVC {{ .Values.pvc.name }} is ReadWriteOnce but more than one replica may run.
+Pods on different nodes will not be able to mount it. Use a single replica or ReadWriteMany storage.
+{{- end }}

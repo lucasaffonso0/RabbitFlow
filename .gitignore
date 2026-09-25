@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+# banco SQLite local (npm run dev)
+data/
+
+# RabbitMQ local de teste (docker, topologia de exemplo, gerador de tráfego)
+local-rabbitmq/

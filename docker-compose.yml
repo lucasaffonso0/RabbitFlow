@@ -1,0 +1,29 @@
+services:
+  rabbitflow:
+    build: .
+    image: rabbitflow:latest
+    container_name: rabbitflow
+    ports:
+      - "${PORT:-4100}:4100"
+    environment:
+      # Encrypts saved RabbitMQ connection passwords; if empty, generated in /data/secret.key
+      RABBITFLOW_SECRET_KEY: ${RABBITFLOW_SECRET_KEY:-}
+      SESSION_DAYS: ${SESSION_DAYS:-7}
+      SESSION_MAX_DAYS: ${SESSION_MAX_DAYS:-30}
+      # 1 behind HTTPS / a reverse proxy
+      COOKIE_SECURE: ${COOKIE_SECURE:-0}
+      TRUST_PROXY: ${TRUST_PROXY:-0}
+    volumes:
+      - rabbitflow-data:/data
+    # lets you add http://host.docker.internal:15672 for a RabbitMQ running on the host
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+
+volumes:
+  rabbitflow-data:
